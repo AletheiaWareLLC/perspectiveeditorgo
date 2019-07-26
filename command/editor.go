@@ -28,6 +28,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -200,18 +201,25 @@ func main() {
 				if outline != nil {
 					puzzle.Outline = outline
 				}
+				start := time.Now()
+				iteration := 0
 				max := 0
-				for i := 0; ; i++ {
+				x := 0
+				for ; ; iteration++ {
+					if iteration == (x * x * x * x) {
+						log.Println(x, "^ 4 =", iteration)
+						x++
+					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
 					s := perspectiveeditorgo.Score(puzzle, uint32(size))
 					if s > max {
 						max = s
-						log.Println("Iteration:", i)
-						log.Println("Maximum:", max)
+						log.Println("Score:", s)
+						log.Println("Iteration:", iteration)
+						log.Println("Elapsed:", time.Since(start))
+						log.Println("Puzzle:", puzzle)
 					}
 					if s > score {
-						log.Println("Puzzle:", puzzle)
-						log.Println("Score:", s)
 						break
 					}
 				}

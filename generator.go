@@ -26,12 +26,11 @@ import (
 func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh, goalColour string, sphereCount int, sphereMesh, sphereColour string, blockCount int, blockMesh, blockColour string, portalCount int, portalMesh, portalColour string) *perspectivego.Puzzle {
 	rand.Seed(time.Now().UnixNano())
 
-	occupied := make([]*perspectivego.Location, 0, goalCount+blockCount+sphereCount+portalCount)
+	occupied := make(map[string]bool, goalCount+blockCount+sphereCount+portalCount)
 	if goalCount > 0 {
 		puzzle.Goal = make([]*perspectivego.Goal, 0, goalCount)
 		for i := 0; i < goalCount; i++ {
 			location := GenerateLocation(occupied, size)
-			occupied = append(occupied, location)
 			goal := &perspectivego.Goal{
 				Name:     "g" + strconv.Itoa(i),
 				Mesh:     goalMesh,
@@ -45,7 +44,6 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 		puzzle.Block = make([]*perspectivego.Block, 0, blockCount)
 		for i := 0; i < blockCount; i++ {
 			location := GenerateLocation(occupied, size)
-			occupied = append(occupied, location)
 			block := &perspectivego.Block{
 				Name:     "b" + strconv.Itoa(i),
 				Mesh:     blockMesh,
@@ -59,7 +57,6 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 		puzzle.Sphere = make([]*perspectivego.Sphere, 0, sphereCount)
 		for i := 0; i < sphereCount; i++ {
 			location := GenerateLocation(occupied, size)
-			occupied = append(occupied, location)
 			sphere := &perspectivego.Sphere{
 				Name:     "s" + strconv.Itoa(i),
 				Mesh:     sphereMesh,
@@ -74,7 +71,6 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 		var previous *perspectivego.Portal
 		for i := 0; i < portalCount; i++ {
 			location := GenerateLocation(occupied, size)
-			occupied = append(occupied, location)
 			portal := &perspectivego.Portal{
 				Name:     "p" + strconv.Itoa(i),
 				Mesh:     portalMesh,
@@ -94,25 +90,19 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 	return puzzle
 }
 
-func GenerateLocation(occupied []*perspectivego.Location, size uint32) *perspectivego.Location {
+func GenerateLocation(occupied map[string]bool, size uint32) *perspectivego.Location {
 	location := &perspectivego.Location{}
+	var key string
 	for {
 		location.X = int32(RandomLocation(size))
 		location.Y = int32(RandomLocation(size))
 		location.Z = int32(RandomLocation(size))
-		if !IsOccupied(occupied, location) {
+		key = location.String()
+		if !occupied[key] {
+			occupied[key] = true
 			return location
 		}
 	}
-}
-
-func IsOccupied(occupied []*perspectivego.Location, location *perspectivego.Location) bool {
-	for _, l := range occupied {
-		if location.X == l.X && location.Y == l.Y && location.Z == l.Z {
-			return true
-		}
-	}
-	return false
 }
 
 func RandomLocation(size uint32) int {

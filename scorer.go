@@ -62,30 +62,42 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) int {
 	// log.Println("Scoring Puzzle:", puzzle)
 	// TODO support multiple spheres
 	sphere := puzzle.Sphere[0]
-	return ScoreDirections(puzzle, size, sphere.Location, make(map[string]bool))
+	blocks := make(map[string]bool, len(puzzle.Block))
+	for _, b := range puzzle.Block {
+		blocks[b.Location.String()] = true
+	}
+	goals := make(map[string]bool, len(puzzle.Goal))
+	for _, g := range puzzle.Goal {
+		goals[g.Location.String()] = true
+	}
+	portals := make(map[string]*perspectivego.Location, len(puzzle.Portal))
+	for _, p := range puzzle.Portal {
+		portals[p.Location.String()] = p.Link
+	}
+	return ScoreDirections(blocks, goals, portals, size, sphere.Location, make(map[string]bool), false)
 }
 
-func ScoreDirections(puzzle *perspectivego.Puzzle, size uint32, sphere *perspectivego.Location, tested map[string]bool) int {
+func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested map[string]bool, portaled bool) int {
 	limit := 0
 	scores := make(chan int)
 	posId := sphere.String()
 	for _, dir := range directions {
 		id := posId + dir.String()
 		mutex.Lock()
-		t, ok := tested[id]
+		t := tested[id]
 		mutex.Unlock()
-		if !ok || !t {
+		if !t {
 			mutex.Lock()
 			tested[id] = true
 			mutex.Unlock()
 			limit++
-			go func(p *perspectivego.Puzzle, s uint32, d *perspectivego.Location, l *perspectivego.Location, t map[string]bool) {
-				scores <- ScoreDirection(p, s, d, l, t)
-			}(puzzle, size, dir, &perspectivego.Location{
+			go func(bs, gs map[string]bool, ps map[string]*perspectivego.Location, s uint32, d *perspectivego.Location, l *perspectivego.Location, t map[string]bool, pd bool) {
+				scores <- ScoreDirection(bs, gs, ps, s, d, l, t, pd)
+			}(blocks, goals, portals, size, dir, &perspectivego.Location{
 				X: sphere.X,
 				Y: sphere.Y,
 				Z: sphere.Z,
-			}, tested)
+			}, tested, portaled)
 		}
 	}
 	sum := 0
@@ -103,51 +115,60 @@ func ScoreDirections(puzzle *perspectivego.Puzzle, size uint32, sphere *perspect
 	return sum
 }
 
-func ScoreDirection(puzzle *perspectivego.Puzzle, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested map[string]bool) int {
+func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested map[string]bool, portaled bool) int {
 	// log.Println("Scoring Direction:", direction)
 	score := 0
-	portaled := false
+	// Tracks portal usage to prevent infinite portal loops
+	usage := make(map[string]int)
 	for {
 		// log.Println("Sphere:", sphere)
 		if Abs(sphere.X) > size || Abs(sphere.Y) > size || Abs(sphere.Z) > size {
 			// log.Println("Out of Bounds")
-			return score + BAD
+			return BAD
 		}
-		for _, g := range puzzle.Goal {
-			if g.Location.X == sphere.X && g.Location.Y == sphere.Y && g.Location.Z == sphere.Z {
-				// log.Println("Goal")
-				return score + GOOD
-			}
-		}
-		for _, b := range puzzle.Block {
-			if b.Location.X == (sphere.X+direction.X) && b.Location.Y == (sphere.Y+direction.Y) && b.Location.Z == (sphere.Z+direction.Z) {
-				// log.Println("Block")
-				s := ScoreDirections(puzzle, size, sphere, tested)
-				if s <= 0 {
-					return s
-				}
-				return s + score + GOOD
-			}
+		key := sphere.String()
+		if goals[key] {
+			// log.Println("Goal")
+			return score + GOOD
 		}
 		if !portaled {
-			for _, p := range puzzle.Portal {
-				if p.Location.X == sphere.X && p.Location.Y == sphere.Y && p.Location.Z == sphere.Z {
+			link, ok := portals[key]
+			if ok {
+				uses, ok := usage[key]
+				if !ok {
+					uses = 0
+				}
+				if uses < 3 {
 					// log.Println("Portal")
-					sphere.X = p.Link.X
-					sphere.Y = p.Link.Y
-					sphere.Z = p.Link.Z
+					sphere.X = link.X
+					sphere.Y = link.Y
+					sphere.Z = link.Z
 					score += GOOD
 					portaled = true
-					break
+					usage[key] = uses + 1
+					continue
+				} else {
+					// log.Println("Infinite Portal Loop")
+					return BAD
 				}
 			}
-			if portaled {
-				continue
-			}
 		}
-		sphere.X += direction.X
-		sphere.Y += direction.Y
-		sphere.Z += direction.Z
+		next := &perspectivego.Location{
+			X: sphere.X + direction.X,
+			Y: sphere.Y + direction.Y,
+			Z: sphere.Z + direction.Z,
+		}
+		if blocks[next.String()] {
+			// log.Println("Block")
+			s := ScoreDirections(blocks, goals, portals, size, sphere, tested, portaled)
+			if s <= 0 {
+				return s
+			}
+			return s + score + GOOD
+		}
+		sphere.X = next.X
+		sphere.Y = next.Y
+		sphere.Z = next.Z
 		portaled = false
 	}
 }
