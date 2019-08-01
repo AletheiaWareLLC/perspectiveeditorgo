@@ -194,7 +194,9 @@ func main() {
 						Colour: outlineColour,
 					}
 				}
-				puzzle := &perspectivego.Puzzle{}
+				puzzle := &perspectivego.Puzzle{
+					Target: uint32(score - 1),
+				}
 				if description != "" {
 					puzzle.Description = description
 				}
