@@ -49,15 +49,17 @@ func main() {
 				if size%2 == 0 {
 					log.Fatal("World size must be odd")
 				}
-				colour := os.Args[4]
+				foreground := os.Args[4]
+				background := os.Args[5]
 				world := &perspectivego.World{
-					Name:   name,
-					Size:   uint32(size),
-					Colour: colour,
+					Name:             name,
+					Size:             uint32(size),
+					ForegroundColour: foreground,
+					BackgroundColour: background,
 				}
 				writer := os.Stdout
-				if len(os.Args) > 5 {
-					file, err := os.OpenFile(os.Args[5], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+				if len(os.Args) > 6 {
+					file, err := os.OpenFile(os.Args[6], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -68,8 +70,8 @@ func main() {
 					log.Fatal(err)
 				}
 			} else {
-				log.Println("create <name> <size> <colour> (write to stdout)")
-				log.Println("create <name> <size> <colour> <output>")
+				log.Println("create <name> <size> <foreground-colour> <background-colour> (write to stdout)")
+				log.Println("create <name> <size> <foreground-colour> <background-colour> <output>")
 			}
 		case "show":
 			if len(os.Args) > 2 {
@@ -276,7 +278,7 @@ func main() {
 func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "Perspective Editor Usage:")
 	fmt.Fprintln(output, "\tperspective-editor - display usage")
-	fmt.Fprintln(output, "\tperspective-editor create [name] [size] [colour] - creates a new world with the given name, size and colour")
+	fmt.Fprintln(output, "\tperspective-editor create [name] [size] [foreground-colour] [background-colour] - creates a new world with the given name, size and colour scheme")
 	fmt.Fprintln(output, "\tperspective-editor show [world] - shows the given world")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tperspective-editor add-shader [world] [name] [attributes] [uniforms] [vertex-source-file] [fragment-source-file] - adds a shader with the given name to the world")
