@@ -59,6 +59,7 @@ func main() {
 				}
 				writer := os.Stdout
 				if len(os.Args) > 6 {
+					log.Println("Writing:", os.Args[6])
 					file, err := os.OpenFile(os.Args[6], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 					if err != nil {
 						log.Fatal(err)
@@ -229,6 +230,7 @@ func main() {
 				}
 				writer := os.Stdout
 				if len(os.Args) > 19 {
+					log.Println("Writing:", os.Args[19])
 					file, err := os.OpenFile(os.Args[19], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 					if err != nil {
 						log.Fatal(err)
