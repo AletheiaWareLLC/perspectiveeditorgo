@@ -36,7 +36,7 @@ func main() {
 
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-		case "create":
+		case "create-world":
 			if len(os.Args) > 4 {
 				name := os.Args[2]
 				size, err := strconv.Atoi(os.Args[3])
@@ -71,10 +71,10 @@ func main() {
 					log.Fatal(err)
 				}
 			} else {
-				log.Println("create <name> <size> <foreground-colour> <background-colour> (write to stdout)")
-				log.Println("create <name> <size> <foreground-colour> <background-colour> <output>")
+				log.Println("create-world <name> <size> <foreground-colour> <background-colour> (write to stdout)")
+				log.Println("create-world <name> <size> <foreground-colour> <background-colour> <output>")
 			}
-		case "show":
+		case "show-world":
 			if len(os.Args) > 2 {
 				path := os.Args[2]
 				world, err := perspectivego.ReadWorldFile(path)
@@ -83,7 +83,7 @@ func main() {
 				}
 				log.Println(proto.MarshalTextString(world))
 			} else {
-				log.Println("show <world>")
+				log.Println("show-world <world>")
 			}
 		case "add-shader":
 			if len(os.Args) > 7 {
@@ -166,20 +166,20 @@ func main() {
 				if err != nil {
 					log.Fatal("Goal count error:", err)
 				}
-				goalMesh := os.Args[8]
-				goalColour := os.Args[9]
+				goalMesh := strings.Split(os.Args[8], ",")
+				goalColour := strings.Split(os.Args[9], ",")
 				sphereCount, err := strconv.Atoi(os.Args[10])
 				if err != nil {
 					log.Fatal("Sphere count error:", err)
 				}
-				sphereMesh := os.Args[11]
-				sphereColour := os.Args[12]
+				sphereMesh := strings.Split(os.Args[11], ",")
+				sphereColour := strings.Split(os.Args[12], ",")
 				blockCount, err := strconv.Atoi(os.Args[13])
 				if err != nil {
 					log.Fatal("Block count error:", err)
 				}
-				blockMesh := os.Args[14]
-				blockColour := os.Args[15]
+				blockMesh := strings.Split(os.Args[14], ",")
+				blockColour := strings.Split(os.Args[15], ",")
 				portalCount, err := strconv.Atoi(os.Args[16])
 				if err != nil {
 					log.Fatal("Portal count error:", err)
@@ -187,8 +187,8 @@ func main() {
 				if portalCount%2 != 0 {
 					log.Fatal("Portal count must be even")
 				}
-				portalMesh := os.Args[17]
-				portalColour := os.Args[18]
+				portalMesh := strings.Split(os.Args[17], ",")
+				portalColour := strings.Split(os.Args[18], ",")
 
 				var outline *perspectivego.Outline
 				if outlineMesh != "" && outlineColour != "" {
@@ -197,9 +197,7 @@ func main() {
 						Colour: outlineColour,
 					}
 				}
-				puzzle := &perspectivego.Puzzle{
-					Target: uint32(score - 1),
-				}
+				puzzle := &perspectivego.Puzzle{}
 				if description != "" {
 					puzzle.Description = description
 				}
@@ -217,9 +215,10 @@ func main() {
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
 					s := perspectiveeditorgo.Score(puzzle, uint32(size))
+					puzzle.Target = uint32(s - 1)
 					if s > max {
 						max = s
-						log.Println("Score:", s)
+						log.Println("Score:", s, "/", score)
 						log.Println("Iteration:", iteration)
 						log.Println("Elapsed:", time.Since(start))
 						log.Println("Puzzle:", puzzle)
@@ -242,7 +241,7 @@ func main() {
 					log.Fatal(err)
 				}
 			} else {
-				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh> <goal-colour> <sphere-count> <sphere-mesh> <sphere-colour> <block-count> <block-mesh> <block-colour> <portal-count> <portal-mesh> <portal-colour>")
+				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
 			}
 		case "score-puzzle":
 			if len(os.Args) > 3 {
@@ -280,12 +279,12 @@ func main() {
 func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "Perspective Editor Usage:")
 	fmt.Fprintln(output, "\tperspective-editor - display usage")
-	fmt.Fprintln(output, "\tperspective-editor create [name] [size] [foreground-colour] [background-colour] - creates a new world with the given name, size and colour scheme")
-	fmt.Fprintln(output, "\tperspective-editor show [world] - shows the given world")
+	fmt.Fprintln(output, "\tperspective-editor create-world [name] [size] [foreground-colour] [background-colour] - creates a new world with the given name, size and colour scheme")
+	fmt.Fprintln(output, "\tperspective-editor show-world [world] - shows the given world")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tperspective-editor add-shader [world] [name] [attributes] [uniforms] [vertex-source-file] [fragment-source-file] - adds a shader with the given name to the world")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tperspective-editor add-puzzle [world] - adds a puzzle to the world")
-	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh] [goal-colour] [sphere-count] [sphere-mesh] [sphere-colour] [block-count] [block-mesh] [block-colour] [portal-count] [portal-mesh] [portal-colour] - generates a new puzzle with the given attributes")
+	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor score-puzzle [size] [path] - scores the puzzle under the given path")
 }

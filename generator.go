@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh, goalColour string, sphereCount int, sphereMesh, sphereColour string, blockCount int, blockMesh, blockColour string, portalCount int, portalMesh, portalColour string) *perspectivego.Puzzle {
+func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh, goalColour []string, sphereCount int, sphereMesh, sphereColour []string, blockCount int, blockMesh, blockColour []string, portalCount int, portalMesh, portalColour []string) *perspectivego.Puzzle {
 	rand.Seed(time.Now().UnixNano())
 
 	occupied := make(map[string]bool, goalCount+blockCount+sphereCount+portalCount)
@@ -33,8 +33,8 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 			location := GenerateLocation(occupied, size)
 			goal := &perspectivego.Goal{
 				Name:     "g" + strconv.Itoa(i),
-				Mesh:     goalMesh,
-				Colour:   goalColour,
+				Mesh:     goalMesh[i%len(goalMesh)],
+				Colour:   goalColour[i%len(goalColour)],
 				Location: location,
 			}
 			puzzle.Goal = append(puzzle.Goal, goal)
@@ -46,8 +46,8 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 			location := GenerateLocation(occupied, size)
 			block := &perspectivego.Block{
 				Name:     "b" + strconv.Itoa(i),
-				Mesh:     blockMesh,
-				Colour:   blockColour,
+				Mesh:     blockMesh[i%len(blockMesh)],
+				Colour:   blockColour[i%len(blockColour)],
 				Location: location,
 			}
 			puzzle.Block = append(puzzle.Block, block)
@@ -59,8 +59,8 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 			location := GenerateLocation(occupied, size)
 			sphere := &perspectivego.Sphere{
 				Name:     "s" + strconv.Itoa(i),
-				Mesh:     sphereMesh,
-				Colour:   sphereColour,
+				Mesh:     sphereMesh[i%len(sphereMesh)],
+				Colour:   sphereColour[i%len(sphereColour)],
 				Location: location,
 			}
 			puzzle.Sphere = append(puzzle.Sphere, sphere)
@@ -73,8 +73,8 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 			location := GenerateLocation(occupied, size)
 			portal := &perspectivego.Portal{
 				Name:     "p" + strconv.Itoa(i),
-				Mesh:     portalMesh,
-				Colour:   portalColour,
+				Mesh:     portalMesh[i%len(portalMesh)],
+				Colour:   portalColour[(i/2)%len(portalColour)],
 				Location: location,
 			}
 			if previous == nil {
