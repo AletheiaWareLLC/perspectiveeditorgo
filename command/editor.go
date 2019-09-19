@@ -214,31 +214,32 @@ func main() {
 						x++
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
-					s := perspectiveeditorgo.Score(puzzle, uint32(size))
+					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
 					puzzle.Target = uint32(s - 1)
 					if s > max {
 						max = s
 						log.Println("Score:", s, "/", score)
+						log.Println("Penalty:", p)
 						log.Println("Iteration:", iteration)
 						log.Println("Elapsed:", time.Since(start))
 						log.Println("Puzzle:", puzzle)
+						if s > score {
+							writer := os.Stdout
+							if len(os.Args) > 19 {
+								log.Println("Writing:", os.Args[19])
+								file, err := os.OpenFile(os.Args[19], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+								if err != nil {
+									log.Fatal(err)
+								}
+								defer file.Close()
+								writer = file
+							}
+							if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
+								log.Fatal(err)
+							}
+							break
+						}
 					}
-					if s > score {
-						break
-					}
-				}
-				writer := os.Stdout
-				if len(os.Args) > 19 {
-					log.Println("Writing:", os.Args[19])
-					file, err := os.OpenFile(os.Args[19], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-					if err != nil {
-						log.Fatal(err)
-					}
-					defer file.Close()
-					writer = file
-				}
-				if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
-					log.Fatal(err)
 				}
 			} else {
 				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
@@ -264,7 +265,9 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				log.Println(perspectiveeditorgo.Score(puzzle, uint32(size)))
+				s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+				log.Println("Score:", s)
+				log.Println("Penalty:", p)
 			} else {
 				log.Println("score-puzzle <size> <path>")
 			}

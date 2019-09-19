@@ -58,7 +58,7 @@ var (
 	mutex = sync.RWMutex{}
 )
 
-func Score(puzzle *perspectivego.Puzzle, size uint32) int {
+func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 	// log.Println("Scoring Puzzle:", puzzle)
 	// TODO support multiple spheres
 	sphere := puzzle.Sphere[0]
@@ -77,21 +77,22 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) int {
 	tested := make(map[string]bool)
 	visited := make(map[string]bool)
 	score := ScoreDirections(blocks, goals, portals, size, sphere.Location, tested, visited, false)
+	penalty := 0
 	// Check all blocks were visited
 	for _, b := range puzzle.Block {
 		if !visited[b.Location.String()] {
 			// log.Println("Unvisited Block: " + b.String())
-			score--
+			penalty++
 		}
 	}
 	// Check all portals were visited
 	for _, p := range puzzle.Portal {
 		if !visited[p.Location.String()] {
 			// log.Println("Unvisited Portal: " + p.String())
-			score--
+			penalty++
 		}
 	}
-	return score
+	return score, penalty
 }
 
 func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested, visited map[string]bool, portaled bool) int {
