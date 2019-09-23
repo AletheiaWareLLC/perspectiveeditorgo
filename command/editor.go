@@ -384,6 +384,41 @@ func main() {
 			} else {
 				log.Println("score-puzzle <size> <path>")
 			}
+		case "score-world":
+			if len(os.Args) > 3 {
+				size, err := strconv.Atoi(os.Args[2])
+				if err != nil {
+					log.Fatal(err)
+				}
+				if size < 0 {
+					log.Fatal("World size must be postive")
+				}
+				if size%2 == 0 {
+					log.Fatal("World size must be odd")
+				}
+				files, err := ioutil.ReadDir(os.Args[3])
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				for _, file := range files {
+					log.Println("File:", file.Name())
+					file, err := os.Open(path.Join(os.Args[3], file.Name()))
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+					puzzle, err := perspectivego.ReadPuzzle(file)
+					if err != nil {
+						log.Fatal(err)
+					}
+					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					log.Println("Score:", s)
+					log.Println("Penalty:", p)
+				}
+			} else {
+				log.Println("score-world <size> <path>")
+			}
 		default:
 			log.Println("Cannot handle", os.Args[1])
 		}
@@ -404,4 +439,5 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor generate-world [size] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new pool of puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor score-puzzle [size] [path] - scores the puzzle under the given path")
+	fmt.Fprintln(output, "\tperspective-editor score-world [size] [path] - scores all puzzles under the given path")
 }
