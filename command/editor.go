@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -244,6 +245,118 @@ func main() {
 			} else {
 				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
 			}
+		case "generate-world":
+			if len(os.Args) > 18 {
+				size, err := strconv.Atoi(os.Args[2])
+				if err != nil {
+					log.Fatal(err)
+				}
+				if size < 0 {
+					log.Fatal("World size must be postive")
+				}
+				if size%2 == 0 {
+					log.Fatal("World size must be odd")
+				}
+				description := os.Args[3]
+				outlineMesh := os.Args[4]
+				outlineColour := os.Args[5]
+				goalCount, err := strconv.Atoi(os.Args[6])
+				if err != nil {
+					log.Fatal("Goal count error:", err)
+				}
+				goalMesh := strings.Split(os.Args[7], ",")
+				goalColour := strings.Split(os.Args[8], ",")
+				sphereCount, err := strconv.Atoi(os.Args[9])
+				if err != nil {
+					log.Fatal("Sphere count error:", err)
+				}
+				sphereMesh := strings.Split(os.Args[10], ",")
+				sphereColour := strings.Split(os.Args[11], ",")
+				blockCount, err := strconv.Atoi(os.Args[12])
+				if err != nil {
+					log.Fatal("Block count error:", err)
+				}
+				blockMesh := strings.Split(os.Args[13], ",")
+				blockColour := strings.Split(os.Args[14], ",")
+				portalCount, err := strconv.Atoi(os.Args[15])
+				if err != nil {
+					log.Fatal("Portal count error:", err)
+				}
+				if portalCount%2 != 0 {
+					log.Fatal("Portal count must be even")
+				}
+				portalMesh := strings.Split(os.Args[16], ",")
+				portalColour := strings.Split(os.Args[17], ",")
+
+				var outline *perspectivego.Outline
+				if outlineMesh != "" && outlineColour != "" {
+					outline = &perspectivego.Outline{
+						Mesh:   outlineMesh,
+						Colour: outlineColour,
+					}
+				}
+				puzzle := &perspectivego.Puzzle{}
+				if description != "" {
+					puzzle.Description = description
+				}
+				if outline != nil {
+					puzzle.Outline = outline
+				}
+				start := time.Now()
+				iteration := 0
+				max := 1
+				if len(os.Args) > 18 {
+					for ; ; max++ {
+						filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max)+".txt")
+						log.Println("Checking:", filename)
+						info, err := os.Stat(filename)
+						if err != nil {
+							log.Println(err)
+							if os.IsNotExist(err) {
+								log.Println("Missing")
+								max--
+								break
+							}
+						} else {
+							log.Println("Found:", info)
+						}
+					}
+				}
+				x := 0
+				for ; ; iteration++ {
+					if iteration == (x * x * x * x) {
+						log.Println(x, "^ 4 =", iteration)
+						x++
+					}
+					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
+					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					puzzle.Target = uint32(s - 1)
+					if s > max {
+						max = s
+						log.Println("Score:", s)
+						log.Println("Penalty:", p)
+						log.Println("Iteration:", iteration)
+						log.Println("Elapsed:", time.Since(start))
+						log.Println("Puzzle:", puzzle)
+						writer := os.Stdout
+						if len(os.Args) > 18 {
+							filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(s)+".txt")
+							log.Println("Writing:", filename)
+							file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+							if err != nil {
+								log.Fatal(err)
+							}
+							defer file.Close()
+							writer = file
+						}
+						if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
+							log.Fatal(err)
+						}
+					}
+				}
+			} else {
+				log.Println("generate-world <size> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
+			}
 		case "score-puzzle":
 			if len(os.Args) > 3 {
 				size, err := strconv.Atoi(os.Args[2])
@@ -289,5 +402,6 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tperspective-editor add-puzzle [world] - adds a puzzle to the world")
 	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new puzzle with the given attributes")
+	fmt.Fprintln(output, "\tperspective-editor generate-world [size] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new pool of puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor score-puzzle [size] [path] - scores the puzzle under the given path")
 }
