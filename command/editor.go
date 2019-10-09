@@ -304,21 +304,13 @@ func main() {
 				}
 				start := time.Now()
 				iteration := 0
-				max := 1
+				max := 0
 				if len(os.Args) > 18 {
-					for ; ; max++ {
-						filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max)+".txt")
-						log.Println("Checking:", filename)
-						info, err := os.Stat(filename)
-						if err != nil {
-							log.Println(err)
-							if os.IsNotExist(err) {
-								log.Println("Missing")
-								max--
-								break
-							}
+					for {
+						if Exists(path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max+1)+".txt")) {
+							max++
 						} else {
-							log.Println("Found:", info)
+							break
 						}
 					}
 				}
@@ -348,6 +340,14 @@ func main() {
 							}
 							defer file.Close()
 							writer = file
+
+							for {
+								if Exists(path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max+1)+".txt")) {
+									max++
+								} else {
+									break
+								}
+							}
 						}
 						if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
 							log.Fatal(err)
@@ -425,6 +425,18 @@ func main() {
 	} else {
 		PrintUsage(os.Stdout)
 	}
+}
+
+func Exists(filename string) bool {
+	log.Println("Checking:", filename)
+	_, err := os.Stat(filename)
+	if err != nil {
+		log.Println(err)
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
 
 func PrintUsage(output io.Writer) {
