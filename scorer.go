@@ -122,7 +122,7 @@ func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspect
 	count := 0
 	for i := 0; i < limit; i++ {
 		s := <-scores
-		if s > 0 {
+		if s >= 0 {
 			sum += s
 			count++
 		}
@@ -130,7 +130,7 @@ func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspect
 	if count > 0 {
 		return sum / count
 	}
-	return sum
+	return BAD
 }
 
 func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested, visited map[string]bool, portaled bool) int {
@@ -147,7 +147,7 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 		key := sphere.String()
 		if goals[key] {
 			// log.Println("Goal")
-			return score + GOOD
+			return score
 		}
 		if !portaled {
 			link, ok := portals[key]
@@ -186,10 +186,10 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 			visited[next.String()] = true
 			visitedMutex.Unlock()
 			s := ScoreDirections(blocks, goals, portals, size, sphere, tested, visited, portaled)
-			if s <= 0 {
-				return s
+			if s >= 0 {
+				return s + score + GOOD
 			}
-			return s + score + GOOD
+			return s
 		}
 		sphere.X = next.X
 		sphere.Y = next.Y

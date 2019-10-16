@@ -215,7 +215,7 @@ func main() {
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
 					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					puzzle.Target = uint32(s - 1)
+					puzzle.Target = uint32(s)
 					if s > max {
 						max = s
 						log.Println("Score:", s, "/", score)
@@ -320,7 +320,7 @@ func main() {
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
 					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					puzzle.Target = uint32(s - 1)
+					puzzle.Target = uint32(s)
 					if s > max {
 						max = s
 						log.Println("Score:", s)
