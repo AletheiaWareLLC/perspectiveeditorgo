@@ -156,7 +156,7 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 				if !ok {
 					uses = 0
 				}
-				if uses < 3 {
+				if uses < 6 {
 					// log.Println("Portal")
 					sphere.X = link.X
 					sphere.Y = link.Y
