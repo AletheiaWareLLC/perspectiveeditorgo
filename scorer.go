@@ -98,7 +98,7 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 
 func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested, visited map[string]bool, portaled bool) int {
 	limit := 0
-	scores := make(chan int)
+	scores := make(chan int, len(directions))
 	posId := sphere.String()
 	for _, dir := range directions {
 		id := posId + dir.String()
