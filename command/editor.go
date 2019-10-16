@@ -350,6 +350,9 @@ func main() {
 						if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
 							log.Fatal(err)
 						}
+						if p == 0 {
+							break
+						}
 					}
 				}
 			} else {
