@@ -20,7 +20,6 @@ import (
 	"github.com/AletheiaWareLLC/perspectivego"
 	//"github.com/golang/protobuf/proto"
 	//"log"
-	"sync"
 )
 
 const (
@@ -55,8 +54,6 @@ var (
 			Z: 1,
 		},
 	}
-	testedMutex  = sync.RWMutex{}
-	visitedMutex = sync.RWMutex{}
 )
 
 func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
@@ -75,7 +72,7 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 	for _, p := range puzzle.Portal {
 		portals[p.Location.String()] = p.Link
 	}
-	tested := make(map[string]bool)
+	tested := make(map[string]int)
 	visited := make(map[string]bool)
 	score := ScoreDirections(blocks, goals, portals, size, sphere.Location, tested, visited, false)
 	penalty := 0
@@ -96,34 +93,24 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 	return score, penalty
 }
 
-func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested, visited map[string]bool, portaled bool) int {
-	limit := 0
-	scores := make(chan int, len(directions))
+func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested map[string]int, visited map[string]bool, portaled bool) int {
+	sum := 0
+	count := 0
 	posId := sphere.String()
 	for _, dir := range directions {
 		id := posId + dir.String()
-		testedMutex.Lock()
-		if tested[id] {
-			testedMutex.Unlock()
-		} else {
-			tested[id] = true
-			testedMutex.Unlock()
-			limit++
-			go func(bs, gs map[string]bool, ps map[string]*perspectivego.Location, s uint32, d *perspectivego.Location, l *perspectivego.Location, t, v map[string]bool, pd bool) {
-				scores <- ScoreDirection(bs, gs, ps, s, d, l, t, v, pd)
-			}(blocks, goals, portals, size, dir, &perspectivego.Location{
+		score, ok := tested[id]
+		if !ok {
+			tested[id] = BAD // Set now, update later to avoid loops
+			score = ScoreDirection(blocks, goals, portals, size, dir, &perspectivego.Location{
 				X: sphere.X,
 				Y: sphere.Y,
 				Z: sphere.Z,
 			}, tested, visited, portaled)
+			tested[id] = score
 		}
-	}
-	sum := 0
-	count := 0
-	for i := 0; i < limit; i++ {
-		s := <-scores
-		if s >= 0 {
-			sum += s
+		if score >= 0 {
+			sum += score
 			count++
 		}
 	}
@@ -133,7 +120,7 @@ func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspect
 	return BAD
 }
 
-func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested, visited map[string]bool, portaled bool) int {
+func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested map[string]int, visited map[string]bool, portaled bool) int {
 	// log.Println("Scoring Direction:", direction)
 	score := 0
 	// Tracks portal usage to prevent infinite portal loops
@@ -164,10 +151,8 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 					score += GOOD
 					portaled = true
 					usage[key] = uses + 1
-					visitedMutex.Lock()
 					visited[key] = true
 					visited[link.String()] = true
-					visitedMutex.Unlock()
 					continue
 				} else {
 					// log.Println("Infinite Portal Loop")
@@ -182,9 +167,7 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 		}
 		if blocks[next.String()] {
 			// log.Println("Block")
-			visitedMutex.Lock()
 			visited[next.String()] = true
-			visitedMutex.Unlock()
 			s := ScoreDirections(blocks, goals, portals, size, sphere, tested, visited, portaled)
 			if s >= 0 {
 				return s + score + GOOD
