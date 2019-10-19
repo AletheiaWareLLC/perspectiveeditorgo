@@ -301,16 +301,31 @@ func main() {
 				if outline != nil {
 					puzzle.Outline = outline
 				}
+				penalties := make(map[int]int)
 				start := time.Now()
 				iteration := 0
-				max := 0
 				if len(os.Args) > 18 {
-					for {
-						if Exists(path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max+1)+".txt")) {
-							max++
-						} else {
-							break
+					files, err := ioutil.ReadDir(os.Args[18])
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					for _, file := range files {
+						filename := path.Join(os.Args[18], file.Name())
+						log.Println("File:", filename)
+						file, err := os.Open(filename)
+						if err != nil {
+							log.Fatal(err)
 						}
+						defer file.Close()
+						puzzle, err := perspectivego.ReadPuzzle(file)
+						if err != nil {
+							log.Fatal(err)
+						}
+						s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+						penalties[s] = p
+						log.Println("Score:", s)
+						log.Println("Penalty:", p)
 					}
 				}
 				for x := 0; x < 100; iteration++ {
@@ -320,38 +335,30 @@ func main() {
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
 					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					puzzle.Target = uint32(s)
-					if s > max {
-						max = s
-						log.Println("Score:", s)
-						log.Println("Penalty:", p)
-						log.Println("Iteration:", iteration)
-						log.Println("Elapsed:", time.Since(start))
-						log.Println("Puzzle:", puzzle)
-						writer := os.Stdout
-						if len(os.Args) > 18 {
-							filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(s)+".txt")
-							log.Println("Writing:", filename)
-							file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-							if err != nil {
+					if s > 0 {
+						puzzle.Target = uint32(s)
+						penalty, ok := penalties[s]
+						if !ok || p < penalty {
+							penalties[s] = p
+							log.Println("Score:", s)
+							log.Println("Penalty:", p)
+							log.Println("Iteration:", iteration)
+							log.Println("Elapsed:", time.Since(start))
+							log.Println("Puzzle:", puzzle)
+							writer := os.Stdout
+							if len(os.Args) > 18 {
+								filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(s)+".txt")
+								log.Println("Writing:", filename)
+								file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+								if err != nil {
+									log.Fatal(err)
+								}
+								defer file.Close()
+								writer = file
+							}
+							if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
 								log.Fatal(err)
 							}
-							defer file.Close()
-							writer = file
-
-							for {
-								if Exists(path.Join(os.Args[18], "/puzzle"+strconv.Itoa(max+1)+".txt")) {
-									max++
-								} else {
-									break
-								}
-							}
-						}
-						if err := perspectivego.WritePuzzle(writer, puzzle); err != nil {
-							log.Fatal(err)
-						}
-						if p == 0 {
-							break
 						}
 					}
 				}
