@@ -208,7 +208,7 @@ func main() {
 				start := time.Now()
 				iteration := 0
 				max := 0
-				for x := 0; x < 100; iteration++ {
+				for x := 0; x <= 100; iteration++ {
 					if iteration == (x * x * x * x) {
 						log.Println(x, "^ 4 =", iteration)
 						x++
@@ -328,7 +328,7 @@ func main() {
 						log.Println("Penalty:", p)
 					}
 				}
-				for x := 0; x < 100; iteration++ {
+				for x := 0; x <= 100; iteration++ {
 					if iteration == (x * x * x * x) {
 						log.Println(x, "^ 4 =", iteration)
 						x++
