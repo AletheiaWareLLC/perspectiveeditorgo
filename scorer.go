@@ -28,34 +28,36 @@ const (
 )
 
 var (
+	left = &perspectivego.Location{
+		X: -1,
+	}
+	right = &perspectivego.Location{
+		X: 1,
+	}
+	down = &perspectivego.Location{
+		Y: -1,
+	}
+	up = &perspectivego.Location{
+		Y: 1,
+	}
+	backward = &perspectivego.Location{
+		Z: -1,
+	}
+	foreward = &perspectivego.Location{
+		Z: 1,
+	}
 	directions = []*perspectivego.Location{
-		// Left
-		&perspectivego.Location{
-			X: -1,
-		},
-		// Right
-		&perspectivego.Location{
-			X: 1,
-		},
-		// Down
-		&perspectivego.Location{
-			Y: -1,
-		},
-		// Up
-		&perspectivego.Location{
-			Y: 1,
-		},
-		// Backwards
-		&perspectivego.Location{
-			Z: -1,
-		},
-		// Forewards
-		&perspectivego.Location{
-			Z: 1,
-		},
+		left,
+		right,
+		down,
+		up,
+		backward,
+		foreward,
 	}
 )
 
+// Score: number of rotations needed to navigate to goal
+// Penalty: number of unvisitable elements
 func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 	// log.Println("Scoring Puzzle:", puzzle)
 	// TODO support multiple spheres
@@ -74,7 +76,11 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 	}
 	tested := make(map[string]int)
 	visited := make(map[string]bool)
-	score := ScoreDirections(blocks, goals, portals, size, sphere.Location, tested, visited, false)
+	rotations, direction := ScoreDirections(blocks, goals, portals, size, sphere.Location, tested, visited, false)
+	if direction != down {
+		// Add initial rotation
+		rotations += 1
+	}
 	penalty := 0
 	// Check all blocks were visited
 	for _, b := range puzzle.Block {
@@ -90,39 +96,36 @@ func Score(puzzle *perspectivego.Puzzle, size uint32) (int, int) {
 			penalty++
 		}
 	}
-	return score, penalty
+	return rotations, penalty
 }
 
-func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested map[string]int, visited map[string]bool, portaled bool) int {
-	sum := 0
-	count := 0
+func ScoreDirections(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, sphere *perspectivego.Location, tested map[string]int, visited map[string]bool, portaled bool) (int, *perspectivego.Location) {
+	min := BAD
+	dir := down
 	posId := sphere.String()
-	for _, dir := range directions {
-		id := posId + dir.String()
-		score, ok := tested[id]
+	for _, d := range directions {
+		id := posId + d.String()
+		rotations, ok := tested[id]
 		if !ok {
 			tested[id] = BAD // Set now, update later to avoid loops
-			score = ScoreDirection(blocks, goals, portals, size, dir, &perspectivego.Location{
+			rotations = ScoreDirection(blocks, goals, portals, size, d, &perspectivego.Location{
 				X: sphere.X,
 				Y: sphere.Y,
 				Z: sphere.Z,
 			}, tested, visited, portaled)
-			tested[id] = score
+			tested[id] = rotations
 		}
-		if score >= 0 {
-			sum += score
-			count++
+		if rotations >= 0 && (rotations < min || min == BAD) {
+			min = rotations
+			dir = d
 		}
 	}
-	if count > 0 {
-		return sum / count
-	}
-	return BAD
+	return min, dir
 }
 
 func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspectivego.Location, size uint32, direction *perspectivego.Location, sphere *perspectivego.Location, tested map[string]int, visited map[string]bool, portaled bool) int {
 	// log.Println("Scoring Direction:", direction)
-	score := 0
+	rotations := 0
 	// Tracks portal usage to prevent infinite portal loops
 	usage := make(map[string]int)
 	for {
@@ -134,7 +137,7 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 		key := sphere.String()
 		if goals[key] {
 			// log.Println("Goal")
-			return score
+			return rotations
 		}
 		if !portaled {
 			link, ok := portals[key]
@@ -148,7 +151,6 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 					sphere.X = link.X
 					sphere.Y = link.Y
 					sphere.Z = link.Z
-					score += GOOD
 					portaled = true
 					usage[key] = uses + 1
 					visited[key] = true
@@ -168,11 +170,11 @@ func ScoreDirection(blocks, goals map[string]bool, portals map[string]*perspecti
 		if blocks[next.String()] {
 			// log.Println("Block")
 			visited[next.String()] = true
-			s := ScoreDirections(blocks, goals, portals, size, sphere, tested, visited, portaled)
-			if s >= 0 {
-				return s + score + GOOD
+			r, _ := ScoreDirections(blocks, goals, portals, size, sphere, tested, visited, portaled)
+			if r >= 0 {
+				return r + rotations + GOOD
 			}
-			return s
+			return r
 		}
 		sphere.X = next.X
 		sphere.Y = next.Y

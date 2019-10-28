@@ -214,16 +214,16 @@ func main() {
 						x++
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
-					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					puzzle.Target = uint32(s)
-					if s > max {
-						max = s
-						log.Println("Score:", s, "/", score)
-						log.Println("Penalty:", p)
+					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					puzzle.Target = uint32(r)
+					if r > max {
+						max = r
+						log.Println("Score:", r, "/", score)
+						log.Println("Penalties:", p)
 						log.Println("Iteration:", iteration)
 						log.Println("Elapsed:", time.Since(start))
 						log.Println("Puzzle:", puzzle)
-						if s > score {
+						if r > score {
 							writer := os.Stdout
 							if len(os.Args) > 19 {
 								log.Println("Writing:", os.Args[19])
@@ -322,10 +322,10 @@ func main() {
 						if err != nil {
 							log.Fatal(err)
 						}
-						s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-						penalties[s] = p
-						log.Println("Score:", s)
-						log.Println("Penalty:", p)
+						r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+						penalties[r] = p
+						log.Println("Score:", r)
+						log.Println("Penalties:", p)
 					}
 				}
 				for x := 0; x <= 100; iteration++ {
@@ -334,20 +334,20 @@ func main() {
 						x++
 					}
 					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
-					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					if s > 0 {
-						puzzle.Target = uint32(s)
-						penalty, ok := penalties[s]
+					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					if r > 0 {
+						puzzle.Target = uint32(r)
+						penalty, ok := penalties[r]
 						if !ok || p < penalty {
-							penalties[s] = p
-							log.Println("Score:", s)
-							log.Println("Penalty:", p)
+							penalties[r] = p
+							log.Println("Score:", r)
+							log.Println("Penalties:", p)
 							log.Println("Iteration:", iteration)
 							log.Println("Elapsed:", time.Since(start))
 							log.Println("Puzzle:", puzzle)
 							writer := os.Stdout
 							if len(os.Args) > 18 {
-								filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(s)+".txt")
+								filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(r)+".txt")
 								log.Println("Writing:", filename)
 								file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 								if err != nil {
@@ -386,9 +386,9 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-				log.Println("Score:", s)
-				log.Println("Penalty:", p)
+				r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+				log.Println("Score:", r)
+				log.Println("Penalties:", p)
 			} else {
 				log.Println("score-puzzle <size> <path>")
 			}
@@ -411,21 +411,70 @@ func main() {
 
 				for _, file := range files {
 					log.Println("File:", file.Name())
-					file, err := os.Open(path.Join(os.Args[3], file.Name()))
+					f, err := os.Open(path.Join(os.Args[3], file.Name()))
 					if err != nil {
 						log.Fatal(err)
 					}
-					defer file.Close()
-					puzzle, err := perspectivego.ReadPuzzle(file)
+					defer f.Close()
+					puzzle, err := perspectivego.ReadPuzzle(f)
 					if err != nil {
 						log.Fatal(err)
 					}
-					s, p := perspectiveeditorgo.Score(puzzle, uint32(size))
-					log.Println("Score:", s)
-					log.Println("Penalty:", p)
+					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					log.Println("Score:", r)
+					log.Println("Penalties:", p)
 				}
 			} else {
 				log.Println("score-world <size> <path>")
+			}
+		case "convert-world":
+			if len(os.Args) > 4 {
+				size, err := strconv.Atoi(os.Args[2])
+				if err != nil {
+					log.Fatal(err)
+				}
+				if size < 0 {
+					log.Fatal("World size must be postive")
+				}
+				if size%2 == 0 {
+					log.Fatal("World size must be odd")
+				}
+				files, err := ioutil.ReadDir(os.Args[3])
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				for _, file := range files {
+					log.Println("Old File:", file.Name())
+					old, err := os.Open(path.Join(os.Args[3], file.Name()))
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer old.Close()
+					puzzle, err := perspectivego.ReadPuzzle(old)
+					if err != nil {
+						log.Fatal(err)
+					}
+					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
+					log.Println("Score:", r)
+					log.Println("Penalties:", p)
+					puzzle.Target = uint32(r)
+					filename := path.Join(os.Args[4], "/puzzle"+strconv.Itoa(r)+".txt")
+					for Exists(filename) {
+						filename += ".dup"
+					}
+					log.Println("New File:", filename)
+					new, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer new.Close()
+					if err := perspectivego.WritePuzzle(new, puzzle); err != nil {
+						log.Fatal(err)
+					}
+				}
+			} else {
+				log.Println("convert-world <size> <old-path> <new-path>")
 			}
 		default:
 			log.Println("Cannot handle", os.Args[1])
@@ -460,4 +509,5 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tperspective-editor generate-world [size] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new pool of puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor score-puzzle [size] [path] - scores the puzzle under the given path")
 	fmt.Fprintln(output, "\tperspective-editor score-world [size] [path] - scores all puzzles under the given path")
+	fmt.Fprintln(output, "\tperspective-editor convert-world [size] [old-path] [new-path] - converts and retargets all puzzles under the old path to the new path")
 }
