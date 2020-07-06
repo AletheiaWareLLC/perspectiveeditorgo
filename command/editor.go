@@ -145,7 +145,7 @@ func main() {
 				log.Println("add-puzzle <world> <file>")
 			}
 		case "generate-puzzle":
-			if len(os.Args) > 18 {
+			if len(os.Args) > 33 {
 				size, err := strconv.Atoi(os.Args[2])
 				if err != nil {
 					log.Fatal(err)
@@ -163,39 +163,57 @@ func main() {
 				description := os.Args[4]
 				outlineMesh := os.Args[5]
 				outlineColour := os.Args[6]
-				goalCount, err := strconv.Atoi(os.Args[7])
+				outlineTexture := os.Args[7]
+				outlineMaterial := os.Args[8]
+				outlineShader := os.Args[9]
+				goalCount, err := strconv.Atoi(os.Args[10])
 				if err != nil {
 					log.Fatal("Goal count error:", err)
 				}
-				goalMesh := strings.Split(os.Args[8], ",")
-				goalColour := strings.Split(os.Args[9], ",")
-				sphereCount, err := strconv.Atoi(os.Args[10])
+				goalMesh := strings.Split(os.Args[11], ",")
+				goalColour := strings.Split(os.Args[12], ",")
+				goalTexture := strings.Split(os.Args[13], ",")
+				goalMaterial := strings.Split(os.Args[14], ",")
+				goalShader := os.Args[15]
+				sphereCount, err := strconv.Atoi(os.Args[16])
 				if err != nil {
 					log.Fatal("Sphere count error:", err)
 				}
-				sphereMesh := strings.Split(os.Args[11], ",")
-				sphereColour := strings.Split(os.Args[12], ",")
-				blockCount, err := strconv.Atoi(os.Args[13])
+				sphereMesh := strings.Split(os.Args[17], ",")
+				sphereColour := strings.Split(os.Args[18], ",")
+				sphereTexture := strings.Split(os.Args[19], ",")
+				sphereMaterial := strings.Split(os.Args[20], ",")
+				sphereShader := os.Args[21]
+				blockCount, err := strconv.Atoi(os.Args[22])
 				if err != nil {
 					log.Fatal("Block count error:", err)
 				}
-				blockMesh := strings.Split(os.Args[14], ",")
-				blockColour := strings.Split(os.Args[15], ",")
-				portalCount, err := strconv.Atoi(os.Args[16])
+				blockMesh := strings.Split(os.Args[23], ",")
+				blockColour := strings.Split(os.Args[24], ",")
+				blockTexture := strings.Split(os.Args[25], ",")
+				blockMaterial := strings.Split(os.Args[26], ",")
+				blockShader := os.Args[27]
+				portalCount, err := strconv.Atoi(os.Args[28])
 				if err != nil {
 					log.Fatal("Portal count error:", err)
 				}
 				if portalCount%2 != 0 {
 					log.Fatal("Portal count must be even")
 				}
-				portalMesh := strings.Split(os.Args[17], ",")
-				portalColour := strings.Split(os.Args[18], ",")
+				portalMesh := strings.Split(os.Args[29], ",")
+				portalColour := strings.Split(os.Args[30], ",")
+				portalTexture := strings.Split(os.Args[31], ",")
+				portalMaterial := strings.Split(os.Args[32], ",")
+				portalShader := os.Args[33]
 
 				var outline *perspectivego.Outline
 				if outlineMesh != "" && outlineColour != "" {
 					outline = &perspectivego.Outline{
-						Mesh:   outlineMesh,
-						Colour: outlineColour,
+						Mesh:     outlineMesh,
+						Colour:   outlineColour,
+						Texture:  outlineTexture,
+						Material: outlineMaterial,
+						Shader:   outlineShader,
 					}
 				}
 				puzzle := &perspectivego.Puzzle{}
@@ -206,14 +224,14 @@ func main() {
 					puzzle.Outline = outline
 				}
 				start := time.Now()
-				iteration := 0
 				max := 0
-				for x := 0; x <= 100; iteration++ {
+				x := 0
+				for iteration := 0; iteration <= 1000000000; iteration++ {
 					if iteration == (x * x * x * x) {
 						log.Println(x, "^ 4 =", iteration)
 						x++
 					}
-					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
+					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, goalTexture, goalMaterial, goalShader, sphereCount, sphereMesh, sphereColour, sphereTexture, sphereMaterial, sphereShader, blockCount, blockMesh, blockColour, blockTexture, blockMaterial, blockShader, portalCount, portalMesh, portalColour, portalTexture, portalMaterial, portalShader)
 					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
 					puzzle.Target = uint32(r)
 					if r > max {
@@ -225,9 +243,9 @@ func main() {
 						log.Println("Puzzle:", puzzle)
 						if r > score {
 							writer := os.Stdout
-							if len(os.Args) > 19 {
-								log.Println("Writing:", os.Args[19])
-								file, err := os.OpenFile(os.Args[19], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+							if len(os.Args) > 34 {
+								log.Println("Writing:", os.Args[34])
+								file, err := os.OpenFile(os.Args[34], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 								if err != nil {
 									log.Fatal(err)
 								}
@@ -242,10 +260,10 @@ func main() {
 					}
 				}
 			} else {
-				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
+				log.Println("generate-puzzle <size> <score> <description> <outline-mesh> <outline-colour> <outline-texture> <outline-material> <outline-shader> <goal-count> <goal-mesh...> <goal-colour...> <goal-texture...> <goal-material...> <goal-shader> <sphere-count> <sphere-mesh...> <sphere-colour...> <sphere-texture...> <sphere-material...> <sphere-shader> <block-count> <block-mesh...> <block-colour...> <block-texture...> <block-material...> <block-shader> <portal-count> <portal-mesh...> <portal-colour...> <portal-texture...> <portal-material...> <portal-shader>")
 			}
 		case "generate-world":
-			if len(os.Args) > 18 {
+			if len(os.Args) > 32 {
 				size, err := strconv.Atoi(os.Args[2])
 				if err != nil {
 					log.Fatal(err)
@@ -259,39 +277,57 @@ func main() {
 				description := os.Args[3]
 				outlineMesh := os.Args[4]
 				outlineColour := os.Args[5]
-				goalCount, err := strconv.Atoi(os.Args[6])
+				outlineTexture := os.Args[6]
+				outlineMaterial := os.Args[7]
+				outlineShader := os.Args[8]
+				goalCount, err := strconv.Atoi(os.Args[9])
 				if err != nil {
 					log.Fatal("Goal count error:", err)
 				}
-				goalMesh := strings.Split(os.Args[7], ",")
-				goalColour := strings.Split(os.Args[8], ",")
-				sphereCount, err := strconv.Atoi(os.Args[9])
+				goalMesh := strings.Split(os.Args[10], ",")
+				goalColour := strings.Split(os.Args[11], ",")
+				goalTexture := strings.Split(os.Args[12], ",")
+				goalMaterial := strings.Split(os.Args[13], ",")
+				goalShader := os.Args[14]
+				sphereCount, err := strconv.Atoi(os.Args[15])
 				if err != nil {
 					log.Fatal("Sphere count error:", err)
 				}
-				sphereMesh := strings.Split(os.Args[10], ",")
-				sphereColour := strings.Split(os.Args[11], ",")
-				blockCount, err := strconv.Atoi(os.Args[12])
+				sphereMesh := strings.Split(os.Args[16], ",")
+				sphereColour := strings.Split(os.Args[17], ",")
+				sphereTexture := strings.Split(os.Args[18], ",")
+				sphereMaterial := strings.Split(os.Args[19], ",")
+				sphereShader := os.Args[20]
+				blockCount, err := strconv.Atoi(os.Args[21])
 				if err != nil {
 					log.Fatal("Block count error:", err)
 				}
-				blockMesh := strings.Split(os.Args[13], ",")
-				blockColour := strings.Split(os.Args[14], ",")
-				portalCount, err := strconv.Atoi(os.Args[15])
+				blockMesh := strings.Split(os.Args[22], ",")
+				blockColour := strings.Split(os.Args[23], ",")
+				blockTexture := strings.Split(os.Args[24], ",")
+				blockMaterial := strings.Split(os.Args[25], ",")
+				blockShader := os.Args[26]
+				portalCount, err := strconv.Atoi(os.Args[27])
 				if err != nil {
 					log.Fatal("Portal count error:", err)
 				}
 				if portalCount%2 != 0 {
 					log.Fatal("Portal count must be even")
 				}
-				portalMesh := strings.Split(os.Args[16], ",")
-				portalColour := strings.Split(os.Args[17], ",")
+				portalMesh := strings.Split(os.Args[28], ",")
+				portalColour := strings.Split(os.Args[29], ",")
+				portalTexture := strings.Split(os.Args[30], ",")
+				portalMaterial := strings.Split(os.Args[31], ",")
+				portalShader := os.Args[32]
 
 				var outline *perspectivego.Outline
 				if outlineMesh != "" && outlineColour != "" {
 					outline = &perspectivego.Outline{
-						Mesh:   outlineMesh,
-						Colour: outlineColour,
+						Mesh:     outlineMesh,
+						Colour:   outlineColour,
+						Texture:  outlineTexture,
+						Material: outlineMaterial,
+						Shader:   outlineShader,
 					}
 				}
 				puzzle := &perspectivego.Puzzle{}
@@ -302,16 +338,14 @@ func main() {
 					puzzle.Outline = outline
 				}
 				penalties := make(map[int]int)
-				start := time.Now()
-				iteration := 0
-				if len(os.Args) > 18 {
-					files, err := ioutil.ReadDir(os.Args[18])
+				if len(os.Args) > 33 {
+					files, err := ioutil.ReadDir(os.Args[33])
 					if err != nil {
 						log.Fatal(err)
 					}
 
 					for _, file := range files {
-						filename := path.Join(os.Args[18], file.Name())
+						filename := path.Join(os.Args[33], file.Name())
 						log.Println("File:", filename)
 						file, err := os.Open(filename)
 						if err != nil {
@@ -328,12 +362,14 @@ func main() {
 						log.Println("Penalties:", p)
 					}
 				}
-				for x := 0; x <= 100; iteration++ {
+				start := time.Now()
+				x := 0
+				for iteration := 0; iteration <= 1000000000; iteration++ {
 					if iteration == (x * x * x * x) {
 						log.Println(x, "^ 4 =", iteration)
 						x++
 					}
-					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, sphereCount, sphereMesh, sphereColour, blockCount, blockMesh, blockColour, portalCount, portalMesh, portalColour)
+					perspectiveeditorgo.Generate(puzzle, uint32(size), goalCount, goalMesh, goalColour, goalTexture, goalMaterial, goalShader, sphereCount, sphereMesh, sphereColour, sphereTexture, sphereMaterial, sphereShader, blockCount, blockMesh, blockColour, blockTexture, blockMaterial, blockShader, portalCount, portalMesh, portalColour, portalTexture, portalMaterial, portalShader)
 					r, p := perspectiveeditorgo.Score(puzzle, uint32(size))
 					if r > 0 {
 						puzzle.Target = uint32(r)
@@ -346,8 +382,8 @@ func main() {
 							log.Println("Elapsed:", time.Since(start))
 							log.Println("Puzzle:", puzzle)
 							writer := os.Stdout
-							if len(os.Args) > 18 {
-								filename := path.Join(os.Args[18], "/puzzle"+strconv.Itoa(r)+".txt")
+							if len(os.Args) > 33 {
+								filename := path.Join(os.Args[33], "/puzzle"+strconv.Itoa(r)+".txt")
 								log.Println("Writing:", filename)
 								file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 								if err != nil {
@@ -363,7 +399,7 @@ func main() {
 					}
 				}
 			} else {
-				log.Println("generate-world <size> <description> <outline-mesh> <outline-colour> <goal-count> <goal-mesh...> <goal-colour...> <sphere-count> <sphere-mesh...> <sphere-colour...> <block-count> <block-mesh...> <block-colour...> <portal-count> <portal-mesh...> <portal-colour...>")
+				log.Println("generate-world <size> <description> <outline-mesh> <outline-colour> <outline-texture> <outline-material> <outline-shader> <goal-count> <goal-mesh...> <goal-colour...> <goal-texture...> <goal-material...> <goal-shader> <sphere-count> <sphere-mesh...> <sphere-colour...> <sphere-texture...> <sphere-material...> <sphere-shader> <block-count> <block-mesh...> <block-colour...> <block-texture...> <block-material...> <block-shader> <portal-count> <portal-mesh...> <portal-colour...> <portal-texture...> <portal-material...> <portal-shader>")
 			}
 		case "score-puzzle":
 			if len(os.Args) > 3 {
@@ -505,8 +541,8 @@ func PrintUsage(output io.Writer) {
 	fmt.Fprintln(output, "\tperspective-editor add-shader [world] [name] [attributes] [uniforms] [vertex-source-file] [fragment-source-file] - adds a shader with the given name to the world")
 	fmt.Fprintln(output)
 	fmt.Fprintln(output, "\tperspective-editor add-puzzle [world] - adds a puzzle to the world")
-	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new puzzle with the given attributes")
-	fmt.Fprintln(output, "\tperspective-editor generate-world [size] [description] [outline-mesh] [outline-colour] [goal-count] [goal-mesh...] [goal-colour...] [sphere-count] [sphere-mesh...] [sphere-colour...] [block-count] [block-mesh...] [block-colour...] [portal-count] [portal-mesh...] [portal-colour...] - generates a new pool of puzzle with the given attributes")
+	fmt.Fprintln(output, "\tperspective-editor generate-puzzle [size] [score] [description] [outline-mesh] [outline-colour] [outline-texture] [outline-material] [outline-shader] [goal-count] [goal-mesh...] [goal-colour...] [goal-texture...] [goal-material...] [goal-shader] [sphere-count] [sphere-mesh...] [sphere-colour...] [sphere-texture...] [sphere-material...] [sphere-shader] [block-count] [block-mesh...] [block-colour...] [block-texture...] [block-material...] [block-shader] [portal-count] [portal-mesh...] [portal-colour...] [portal-texture...] [portal-material...] [portal-shader] - generates a new puzzle with the given attributes")
+	fmt.Fprintln(output, "\tperspective-editor generate-world [size] [description] [outline-mesh] [outline-colour] [outline-texture] [outline-material] [outline-shader] [goal-count] [goal-mesh...] [goal-colour...] [goal-texture...] [goal-material...] [goal-shader] [sphere-count] [sphere-mesh...] [sphere-colour...] [sphere-texture...] [sphere-material...] [sphere-shader] [block-count] [block-mesh...] [block-colour...] [block-texture...] [block-material...] [block-shader] [portal-count] [portal-mesh...] [portal-colour...] [portal-texture...] [portal-material...] [portal-shader] - generates a new pool of puzzle with the given attributes")
 	fmt.Fprintln(output, "\tperspective-editor score-puzzle [size] [path] - scores the puzzle under the given path")
 	fmt.Fprintln(output, "\tperspective-editor score-world [size] [path] - scores all puzzles under the given path")
 	fmt.Fprintln(output, "\tperspective-editor convert-world [size] [old-path] [new-path] - converts and retargets all puzzles under the old path to the new path")

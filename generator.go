@@ -23,7 +23,11 @@ import (
 	"time"
 )
 
-func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh, goalColour []string, sphereCount int, sphereMesh, sphereColour []string, blockCount int, blockMesh, blockColour []string, portalCount int, portalMesh, portalColour []string) *perspectivego.Puzzle {
+func Generate(puzzle *perspectivego.Puzzle, size uint32,
+	goalCount int, goalMesh, goalColour, goalTexture, goalMaterial []string, goalShader string,
+	sphereCount int, sphereMesh, sphereColour, sphereTexture, sphereMaterial []string, sphereShader string,
+	blockCount int, blockMesh, blockColour, blockTexture, blockMaterial []string, blockShader string,
+	portalCount int, portalMesh, portalColour, portalTexture, portalMaterial []string, portalShader string) *perspectivego.Puzzle {
 	rand.Seed(time.Now().UnixNano())
 
 	occupied := make(map[string]bool, goalCount+blockCount+sphereCount+portalCount)
@@ -36,6 +40,9 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 				Mesh:     goalMesh[i%len(goalMesh)],
 				Colour:   goalColour[i%len(goalColour)],
 				Location: location,
+				Texture:  goalTexture[i%len(goalTexture)],
+				Material: goalMaterial[i%len(goalMaterial)],
+				Shader:   goalShader,
 			}
 			puzzle.Goal = append(puzzle.Goal, goal)
 		}
@@ -49,6 +56,9 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 				Mesh:     blockMesh[i%len(blockMesh)],
 				Colour:   blockColour[i%len(blockColour)],
 				Location: location,
+				Texture:  blockTexture[i%len(blockTexture)],
+				Material: blockMaterial[i%len(blockMaterial)],
+				Shader:   blockShader,
 			}
 			puzzle.Block = append(puzzle.Block, block)
 		}
@@ -62,6 +72,9 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 				Mesh:     sphereMesh[i%len(sphereMesh)],
 				Colour:   sphereColour[i%len(sphereColour)],
 				Location: location,
+				Texture:  sphereTexture[i%len(sphereTexture)],
+				Material: sphereMaterial[i%len(sphereMaterial)],
+				Shader:   sphereShader,
 			}
 			puzzle.Sphere = append(puzzle.Sphere, sphere)
 		}
@@ -76,6 +89,9 @@ func Generate(puzzle *perspectivego.Puzzle, size uint32, goalCount int, goalMesh
 				Mesh:     portalMesh[i%len(portalMesh)],
 				Colour:   portalColour[(i/2)%len(portalColour)],
 				Location: location,
+				Texture:  portalTexture[(i/2)%len(portalTexture)],
+				Material: portalMaterial[(i/2)%len(portalMaterial)],
+				Shader:   portalShader,
 			}
 			if previous == nil {
 				previous = portal
